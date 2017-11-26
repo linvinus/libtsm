@@ -136,6 +136,7 @@ enum parser_action {
 #define FLAG_BACKGROUND_COLOR_ERASE_MODE	0x00008000 /* Set background color on erase (bce) */
 #define FLAG_PREPEND_ESCAPE			0x00010000 /* Prepend escape character to next output */
 #define FLAG_TITE_INHIBIT_MODE			0x00020000 /* Prevent switching to alternate screen buffer */
+#define FLAG_BRACKETED_PASTE_MODE			0x00040000 /* wrap paste with \e[200~ \e[201~ */
 
 struct vte_saved_state {
 	unsigned int cursor_x;
@@ -1325,6 +1326,12 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 				set_reset_flag(vte, set,
 					       FLAG_LINE_FEED_NEW_LINE_MODE);
 				continue;
+      /* 1000: Send-coords-on-button. */
+      /* 1002: mouse Cell motion tracking.*/
+      case 2004: /* 2004: Bracketed paste mode.*/
+        set_reset_flag(vte, set,
+                  FLAG_BRACKETED_PASTE_MODE);
+        continue;
 			default:
 				llog_debug(vte, "unknown non-DEC (Re)Set-Mode %d",
 					   vte->csi_argv[i]);

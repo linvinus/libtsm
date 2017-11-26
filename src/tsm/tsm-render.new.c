@@ -48,7 +48,7 @@ tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 	unsigned int cur_x, cur_y;
 	unsigned int i, j, k;
 	struct line *iter, *line = NULL;
-	struct cell *cell, empty;
+	struct cell *cell;
 	struct tsm_screen_attr attr;
 	int ret, warned = 0;
 	const uint32_t *ch;
@@ -59,8 +59,6 @@ tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 
 	if (!con || !draw_cb)
 		return 0;
-
-	screen_cell_init(con, &empty);
 
 	cur_x = con->cursor_x;
 	if (con->cursor_x >= con->size_x)
@@ -115,11 +113,7 @@ tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 		}
 
 		for (j = 0; j < con->size_x; ++j) {
-			if (j < line->size)
-				cell = &line->cells[j];
-			else
-				cell = &empty;
-
+			cell = &line->cells[j];
 			memcpy(&attr, &cell->attr, sizeof(attr));
 
 			if (con->sel_active) {
