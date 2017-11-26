@@ -854,7 +854,7 @@ void tsm_screen_sb_up(struct tsm_screen *con, unsigned int num)
 {
   unsigned int i=0,k=0;
   struct line *iter, *line;
-	if (!con || !num)
+	if (!con || !num || (con->flags & TSM_SCREEN_ALTERNATE))
 		return;
 
 	screen_inc_age(con);
@@ -900,7 +900,7 @@ void tsm_screen_sb_down(struct tsm_screen *con, unsigned int num)
   unsigned int i=0,k=0;
   struct line *iter, *line;
 
-	if (!con || !num)
+	if (!con || !num  || (con->flags & TSM_SCREEN_ALTERNATE))
 		return;
 
 	screen_inc_age(con);
@@ -1034,7 +1034,7 @@ void tsm_screen_set_flags(struct tsm_screen *con, unsigned int flags)
 	if (!(old & TSM_SCREEN_INVERSE) && (flags & TSM_SCREEN_INVERSE))
 		con->age = con->age_cnt;
 
-  llog_debug(con,"tsm_screen_set_flags age=%u top=%u bottom=%u line_num=%u\n", con->age,con->margin_top,con->margin_bottom,con->line_num);
+  llog_debug(con,"tsm_screen_set_flags age=%u top=%u bottom=%u line_num=%u oldf=%u newf=%u\n", con->age,con->margin_top,con->margin_bottom,con->line_num, old, con->flags);
   for(i=con->margin_top;i <= con->margin_bottom;i++){
     con->lines[i]->age = con->age_cnt;//mark moved age
   }
