@@ -110,7 +110,8 @@ struct tsm_screen {
 	struct tsm_symbol_table *sym_table;
 
 	/* default attributes for new cells */
-	struct tsm_screen_attr def_attr;
+	struct tsm_screen_attr def_attr_main; /*default attributes for new cells on main screen, used on resize*/
+	struct tsm_screen_attr def_attr_alt;  /*default attributes for new cells on alternate screen, used on resize*/
 
 	/* ageing */
 	tsm_age_t age_cnt;		/* current age counter */

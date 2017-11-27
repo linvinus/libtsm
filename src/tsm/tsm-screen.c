@@ -115,7 +115,14 @@ void screen_cell_init(struct tsm_screen *con, struct cell *cell)
 	cell->ch = 0;
 	cell->width = 1;
 	cell->age = con->age_cnt;
-	memcpy(&cell->attr, &con->def_attr, sizeof(cell->attr));
+	
+	if((con->flags & TSM_SCREEN_ALTERNATE)){
+		memcpy(&cell->attr, &con->def_attr_alt, sizeof(cell->attr));
+	}else{
+		memcpy(&cell->attr, &con->def_attr_main, sizeof(cell->attr));
+	}
+
+	
 }
 
 static int line_new(struct tsm_screen *con, struct line **out,
@@ -491,9 +498,9 @@ int tsm_screen_new(struct tsm_screen **out, tsm_log_t log, void *log_data)
 	con->llog_data = log_data;
 	con->age_cnt = 1;
 	con->age = con->age_cnt;
-	con->def_attr.fr = 255;
-	con->def_attr.fg = 255;
-	con->def_attr.fb = 255;
+	con->def_attr_alt.fr = con->def_attr_main.fr = 255;
+	con->def_attr_alt.fg = con->def_attr_main.fg = 255;
+	con->def_attr_alt.fb = con->def_attr_main.fb = 255;
 
 	ret = tsm_symbol_table_new(&con->sym_table);
 	if (ret)
@@ -598,7 +605,7 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 		      unsigned int y)
 {
 	struct line **cache;
-	unsigned int i, j, width, diff, start;
+	unsigned int i, j, width, diff, start, old_flags;
 	int ret;
 	bool *tab_ruler;
 
@@ -665,27 +672,33 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 		if (!tab_ruler)
 			return -ENOMEM;
 		con->tab_ruler = tab_ruler;
-
+		
+		old_flags = con->flags;
 		for (i = 0; i < con->line_num; ++i) {
+			con->flags &= ~TSM_SCREEN_ALTERNATE;//little trick, use def_attr_main for main screen
 			ret = line_resize(con, con->main_lines[i], x);
 			if (ret)
-				return ret;
-
+				break;
+			con->flags |= TSM_SCREEN_ALTERNATE; //little trick, use def_attr_alt for alternate screen
 			ret = line_resize(con, con->alt_lines[i], x);
 			if (ret)
-				return ret;
+				break;
+			
 		}
+		con->flags = old_flags;
+		if(ret)
+			return ret;
 	}
 
 	screen_inc_age(con);
 
 	/* clear expansion/padding area */
-	start = x;
+/*	start = x;
 	if (x > con->size_x)
 		start = con->size_x;
 	for (j = 0; j < con->line_num; ++j) {
 		/* main-lines may go into SB, so clear all cells */
-		i = 0;
+/*		i = 0;
 		if (j < con->size_y)
 			i = start;
 
@@ -693,13 +706,13 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 			screen_cell_init(con, &con->main_lines[j]->cells[i]);
 
 		/* alt-lines never go into SB, only clear visible cells */
-		i = 0;
+/*		i = 0;
 		if (j < con->size_y)
 			i = con->size_x;
 
 		for ( ; i < x; ++i)
 			screen_cell_init(con, &con->alt_lines[j]->cells[i]);
-	}
+	}*/
 
 	/* xterm destroys margins on resize, so do we */
 	con->margin_top = 0;
@@ -973,8 +986,11 @@ void tsm_screen_set_def_attr(struct tsm_screen *con,
 {
 	if (!con || !attr)
 		return;
-
-	memcpy(&con->def_attr, attr, sizeof(*attr));
+	if((con->flags & TSM_SCREEN_ALTERNATE)){
+		memcpy(&con->def_attr_alt, attr, sizeof(*attr)); //default attributes for new cells on alternate screen, used on resize
+	}else{
+		memcpy(&con->def_attr_main, attr, sizeof(*attr));//default attributes for new cells on main screen, used on resize
+	}
 }
 
 SHL_EXPORT
