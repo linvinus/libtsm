@@ -652,7 +652,7 @@ void tsm_vte_hard_reset(struct tsm_vte *vte)
 
 static void send_primary_da(struct tsm_vte *vte)
 {
-	vte_write(vte, "\e[?60;1;6;9;15c", 17);
+	vte_write(vte, "\e[?60;1;6;9;15c", 15);
 }
 
 /* execute control character (C0 or C1) */
